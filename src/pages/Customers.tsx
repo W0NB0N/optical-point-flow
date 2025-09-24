@@ -1,7 +1,12 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { CustomerModal } from "@/components/modals/CustomerModal";
+import { CustomerDetailsModal } from "@/components/modals/CustomerDetailsModal";
+import { apiService } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Plus, 
   Search, 
@@ -12,50 +17,65 @@ import {
   Users
 } from "lucide-react";
 
-const customers = [
-  {
-    id: "1",
-    name: "John Smith",
-    phone: "+91 98765 43210",
-    gender: "Male",
-    birthdate: "1985-06-15",
-    lastVisit: "2024-01-10",
-    totalSales: "₹8,450",
-    status: "Active"
-  },
-  {
-    id: "2",
-    name: "Maria Garcia", 
-    phone: "+91 87654 32109",
-    gender: "Female",
-    birthdate: "1992-03-22",
-    lastVisit: "2024-01-12",
-    totalSales: "₹5,670",
-    status: "Active"
-  },
-  {
-    id: "3",
-    name: "David Wilson",
-    phone: "+91 76543 21098", 
-    gender: "Male",
-    birthdate: "1978-11-08",
-    lastVisit: "2024-01-08",
-    totalSales: "₹12,340",
-    status: "Active"
-  },
-  {
-    id: "4",
-    name: "Sarah Johnson",
-    phone: "+91 65432 10987",
-    gender: "Female", 
-    birthdate: "1990-09-14",
-    lastVisit: "2023-12-20",
-    totalSales: "₹3,200",
-    status: "Inactive"
-  }
-];
-
 export default function Customers() {
+  const { toast } = useToast();
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [editingCustomer, setEditingCustomer] = useState<any>(null);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+
+  useEffect(() => {
+    loadCustomers();
+  }, []);
+
+  const loadCustomers = async (query = "") => {
+    setLoading(true);
+    try {
+      const data = await apiService.getCustomers(query);
+      setCustomers(data);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load customers",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await loadCustomers(searchQuery);
+  };
+
+  const handleAddSuccess = () => {
+    loadCustomers(searchQuery);
+    toast({ title: "Customer added successfully" });
+  };
+
+  const handleEditSuccess = () => {
+    loadCustomers(searchQuery);
+    setEditingCustomer(null);
+    toast({ title: "Customer updated successfully" });
+  };
+
+  const handleEditCustomer = (customer: any) => {
+    setEditingCustomer(customer);
+    setShowDetailsModal(false);
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 flex justify-center items-center min-h-[400px]">
+        <div className="text-muted-foreground">Loading customers...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -67,7 +87,8 @@ export default function Customers() {
           </h1>
           <p className="text-muted-foreground mt-1">Manage your customer database</p>
         </div>
-        <Button className="bg-gradient-primary hover:shadow-hover transition-all">
+        <Button className="bg-gradient-primary hover:shadow-hover transition-all"
+                onClick={() => setShowAddModal(true)}>
           <Plus className="w-4 h-4 mr-2" />
           Add Customer
         </Button>
@@ -76,15 +97,21 @@ export default function Customers() {
       {/* Search and Filter */}
       <Card className="shadow-card">
         <CardContent className="p-4">
-          <div className="flex flex-col md:flex-row gap-4">
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input 
                 placeholder="Search customers by name or phone..."
                 className="pl-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex gap-2">
+              <Button type="submit" variant="outline" size="sm">
+                <Search className="w-4 h-4 mr-2" />
+                Search
+              </Button>
               <Button variant="outline" size="sm">
                 <Filter className="w-4 h-4 mr-2" />
                 Filter
@@ -93,7 +120,7 @@ export default function Customers() {
                 Export
               </Button>
             </div>
-          </div>
+          </form>
         </CardContent>
       </Card>
 
@@ -105,7 +132,11 @@ export default function Customers() {
         <CardContent>
           <div className="space-y-4">
             {customers.map((customer) => (
-              <div key={customer.id} className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all border border-border/50">
+              <div key={customer.id} className="flex items-center justify-between p-4 rounded-lg bg-secondary/30 hover:bg-secondary/50 transition-all border border-border/50 cursor-pointer"
+                   onClick={() => {
+                     setSelectedCustomerId(customer.id);
+                     setShowDetailsModal(true);
+                   }}>
                 <div className="flex-1 grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
                     <p className="font-semibold text-foreground">{customer.name}</p>
@@ -113,38 +144,63 @@ export default function Customers() {
                   </div>
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Gender</p>
-                    <p className="text-sm text-foreground">{customer.gender}</p>
+                    <p className="text-sm text-foreground">{customer.gender === 'M' ? 'Male' : customer.gender === 'F' ? 'Female' : 'Not specified'}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Last Visit</p>
-                    <p className="text-sm text-foreground">{customer.lastVisit}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Birth Date</p>
+                    <p className="text-sm text-foreground">{customer.dob || 'Not specified'}</p>
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Sales</p>
-                    <p className="text-sm font-semibold text-foreground">{customer.totalSales}</p>
+                    <p className="text-sm font-medium text-muted-foreground">Customer ID</p>
+                    <p className="text-sm font-semibold text-foreground">#{customer.id}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant={customer.status === "Active" ? "default" : "secondary"}>
-                    {customer.status}
-                  </Badge>
+                  <Badge variant="default">Active</Badge>
                   <div className="flex gap-1 ml-2">
-                    <Button variant="ghost" size="sm" className="p-2">
+                    <Button variant="ghost" size="sm" className="p-2" onClick={(e) => e.stopPropagation()}>
                       <MessageCircle className="w-4 h-4 text-success" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="p-2">
+                    <Button variant="ghost" size="sm" className="p-2" onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCustomerId(customer.id);
+                      setShowDetailsModal(true);
+                    }}>
                       <Eye className="w-4 h-4 text-primary" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="p-2">
+                    <Button variant="ghost" size="sm" className="p-2" onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingCustomer(customer);
+                    }}>
                       <Edit className="w-4 h-4 text-muted-foreground" />
                     </Button>
                   </div>
                 </div>
               </div>
             ))}
+            {customers.length === 0 && (
+              <p className="text-center text-muted-foreground py-8">No customers found</p>
+            )}
           </div>
         </CardContent>
       </Card>
+
+      <CustomerModal 
+        open={showAddModal || !!editingCustomer}
+        onOpenChange={() => {
+          setShowAddModal(false);
+          setEditingCustomer(null);
+        }}
+        onSuccess={editingCustomer ? handleEditSuccess : handleAddSuccess}
+        customer={editingCustomer}
+      />
+
+      <CustomerDetailsModal
+        open={showDetailsModal}
+        onOpenChange={setShowDetailsModal}
+        customerId={selectedCustomerId}
+        onEdit={handleEditCustomer}
+      />
     </div>
   );
 }

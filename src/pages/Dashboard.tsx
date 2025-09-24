@@ -1,7 +1,11 @@
+import { useEffect, useState } from "react";
 import { StatsCard } from "@/components/ui/stats-card";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { SaleDetailsModal } from "@/components/modals/SaleDetailsModal";
+import { apiService } from "@/lib/api";
+import { useToast } from "@/hooks/use-toast";
 import { 
   DollarSign, 
   Users, 
@@ -13,52 +17,48 @@ import {
   FileText
 } from "lucide-react";
 
-const recentSales = [
-  {
-    id: "1",
-    customer: "John Smith",
-    phone: "+91 98765 43210",
-    amount: "₹2,450",
-    date: "Today",
-    recallDate: "2024-01-15",
-    status: "Completed"
-  },
-  {
-    id: "2", 
-    customer: "Maria Garcia",
-    phone: "+91 87654 32109",
-    amount: "₹1,850",
-    date: "Yesterday",
-    recallDate: "2024-01-20",
-    status: "Pending"
-  },
-  {
-    id: "3",
-    customer: "David Wilson",
-    phone: "+91 76543 21098",
-    amount: "₹3,200",
-    date: "2 days ago",
-    recallDate: "2024-01-18",
-    status: "Completed"
-  }
-];
-
-const todayEvents = [
-  {
-    type: "recall",
-    customer: "Sarah Johnson",
-    phone: "+91 65432 10987",
-    message: "Frame adjustment due today"
-  },
-  {
-    type: "birthday",
-    customer: "Michael Brown",
-    phone: "+91 54321 09876",
-    message: "Birthday today! Send wishes"
-  }
-];
-
 export default function Dashboard() {
+  const { toast } = useToast();
+  const [salesSummary, setSalesSummary] = useState<any>(null);
+  const [recentSales, setRecentSales] = useState<any[]>([]);
+  const [todayEvents, setTodayEvents] = useState<any>({ recalls: [], birthdays: [] });
+  const [selectedSaleId, setSelectedSaleId] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      const [summary, sales, events] = await Promise.all([
+        apiService.getDashboardSalesSummary(),
+        apiService.getDashboardRecentSales(),
+        apiService.getDashboardEvents()
+      ]);
+      
+      setSalesSummary(summary);
+      setRecentSales(sales);
+      setTodayEvents(events);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load dashboard data",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="p-6 flex justify-center items-center min-h-[400px]">
+        <div className="text-muted-foreground">Loading dashboard...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-8">
       {/* Welcome Section */}
@@ -89,29 +89,29 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatsCard
           title="Today's Sales"
-          value="₹12,450"
-          change="+12% from yesterday"
+          value={`₹${salesSummary?.today_sales?.toLocaleString() || '0'}`}
+          change="Real-time data"
           changeType="positive"
           icon={<DollarSign className="w-6 h-6 text-primary" />}
         />
         <StatsCard
-          title="This Week"
-          value="₹45,230"
-          change="+8% from last week"
-          changeType="positive"
-          icon={<TrendingUp className="w-6 h-6 text-success" />}
-        />
-        <StatsCard
           title="This Month"
-          value="₹1,85,670"
-          change="+15% from last month"
+          value={`₹${salesSummary?.this_month_sales?.toLocaleString() || '0'}`}
+          change="Current month"
           changeType="positive"
-          icon={<Calendar className="w-6 h-6 text-warning" />}
+          icon={<Calendar className="w-6 h-6 text-success" />}
         />
         <StatsCard
-          title="Total Customers"
-          value="248"
-          change="+5 new this week"
+          title="Last Month"
+          value={`₹${salesSummary?.last_month_sales?.toLocaleString() || '0'}`}
+          change="Previous month"
+          changeType="neutral"
+          icon={<TrendingUp className="w-6 h-6 text-warning" />}
+        />
+        <StatsCard
+          title="Recent Sales"
+          value={recentSales.length.toString()}
+          change="Latest transactions"
           changeType="positive"
           icon={<Users className="w-6 h-6 text-primary" />}
         />
@@ -130,28 +130,31 @@ export default function Dashboard() {
           <CardContent>
             <div className="space-y-4">
               {recentSales.map((sale) => (
-                <div key={sale.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors">
+                <div key={sale.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors cursor-pointer"
+                     onClick={() => setSelectedSaleId(sale.id)}>
                   <div className="flex-1">
-                    <p className="font-medium text-foreground">{sale.customer}</p>
-                    <p className="text-sm text-muted-foreground">{sale.phone}</p>
-                    <p className="text-xs text-muted-foreground">Recall: {sale.recallDate}</p>
+                    <p className="font-medium text-foreground">{sale.customer_name}</p>
+                    <p className="text-sm text-muted-foreground">{sale.date}</p>
                   </div>
                   <div className="text-right space-y-1">
-                    <p className="font-semibold text-foreground">{sale.amount}</p>
-                    <Badge variant={sale.status === "Completed" ? "default" : "secondary"}>
-                      {sale.status}
-                    </Badge>
+                    <p className="font-semibold text-foreground">₹{sale.net_amount?.toLocaleString()}</p>
                   </div>
                   <div className="ml-3 flex gap-1">
                     <Button variant="ghost" size="sm" className="p-1">
                       <MessageCircle className="w-4 h-4 text-success" />
                     </Button>
-                    <Button variant="ghost" size="sm" className="p-1">
+                    <Button variant="ghost" size="sm" className="p-1" onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedSaleId(sale.id);
+                    }}>
                       <Eye className="w-4 h-4 text-primary" />
                     </Button>
                   </div>
                 </div>
               ))}
+              {recentSales.length === 0 && (
+                <p className="text-center text-muted-foreground py-8">No recent sales</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -163,17 +166,30 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {todayEvents.map((event, index) => (
-                <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+              {todayEvents.recalls?.map((recall: any, index: number) => (
+                <div key={`recall-${index}`} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-1">
-                      <Badge variant={event.type === "recall" ? "default" : "secondary"}>
-                        {event.type === "recall" ? "Recall" : "Birthday"}
-                      </Badge>
-                      <p className="font-medium text-foreground">{event.customer}</p>
+                      <Badge variant="default">Recall</Badge>
+                      <p className="font-medium text-foreground">{recall.name}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground">{event.phone}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{event.message}</p>
+                    <p className="text-sm text-muted-foreground">{recall.phone}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Follow-up due today</p>
+                  </div>
+                  <Button variant="ghost" size="sm" className="p-2">
+                    <MessageCircle className="w-4 h-4 text-success" />
+                  </Button>
+                </div>
+              ))}
+              {todayEvents.birthdays?.map((birthday: any, index: number) => (
+                <div key={`birthday-${index}`} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="secondary">Birthday</Badge>
+                      <p className="font-medium text-foreground">{birthday.name}</p>
+                    </div>
+                    <p className="text-sm text-muted-foreground">{birthday.phone}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Birthday today! Send wishes</p>
                   </div>
                   <Button variant="ghost" size="sm" className="p-2">
                     <MessageCircle className="w-4 h-4 text-success" />
@@ -181,12 +197,18 @@ export default function Dashboard() {
                 </div>
               ))}
             </div>
-            {todayEvents.length === 0 && (
+            {(!todayEvents.recalls?.length && !todayEvents.birthdays?.length) && (
               <p className="text-center text-muted-foreground py-8">No events for today</p>
             )}
           </CardContent>
         </Card>
       </div>
+
+      <SaleDetailsModal 
+        open={!!selectedSaleId} 
+        onOpenChange={() => setSelectedSaleId(null)}
+        saleId={selectedSaleId}
+      />
     </div>
   );
 }
