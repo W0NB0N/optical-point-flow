@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'http://127.0.0.1:5000';
 
 class ApiService {
   private async request(endpoint: string, options: RequestInit = {}) {
@@ -71,6 +71,12 @@ class ApiService {
     });
   }
 
+  async deleteProduct(id: number) {
+    return this.request(`/products/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
   // Service endpoints
   async getServices() {
     return this.request('/services');
@@ -80,6 +86,12 @@ class ApiService {
     return this.request('/services', {
       method: 'POST',
       body: JSON.stringify(serviceData),
+    });
+  }
+
+  async deleteService(id: number) {
+    return this.request(`/services/${id}`, {
+      method: 'DELETE',
     });
   }
 
@@ -111,6 +123,14 @@ class ApiService {
     return this.request('/payments', {
       method: 'POST',
       body: JSON.stringify(paymentData),
+    });
+  }
+
+  // Expenses (Cashbook)
+  async addExpense(expenseData: any) {
+    return this.request('/expenses', {
+      method: 'POST',
+      body: JSON.stringify(expenseData),
     });
   }
 

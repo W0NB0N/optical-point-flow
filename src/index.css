@@ -132,3 +132,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Accessibility: darker input borders for clarity */
+@layer components {
+  input, select, textarea, .shad-input, .shad-select {
+    @apply border-gray-400 focus:border-gray-500;
+  }
+}

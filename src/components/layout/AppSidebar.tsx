@@ -60,7 +60,7 @@ export function AppSidebar() {
   const collapsed = state === "collapsed";
 
   return (
-    <Sidebar className="border-r border-border bg-card shadow-card">
+    <Sidebar collapsible="icon" className="border-r border-border shadow-card">
       <SidebarHeader className="border-b border-border p-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gradient-primary rounded-xl flex items-center justify-center shadow-neumorphic">
@@ -91,7 +91,7 @@ export function AppSidebar() {
                         `flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
                           isActive
                             ? "bg-primary text-primary-foreground shadow-card"
-                            : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                            : "text-black hover:bg-secondary"
                         }`
                       }
                     >

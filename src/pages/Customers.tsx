@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { CustomerModal } from "@/components/modals/CustomerModal";
 import { CustomerDetailsModal } from "@/components/modals/CustomerDetailsModal";
+import { PrescriptionModal } from "@/components/modals/PrescriptionModal";
 import { apiService } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -26,6 +27,7 @@ export default function Customers() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<any>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [showRxModal, setShowRxModal] = useState(false);
 
   useEffect(() => {
     loadCustomers();
@@ -156,7 +158,7 @@ export default function Customers() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="default">Active</Badge>
+                  {/* <Badge variant="default">Active</Badge> */}
                   <div className="flex gap-1 ml-2">
                     <Button variant="ghost" size="sm" className="p-2" onClick={(e) => e.stopPropagation()}>
                       <MessageCircle className="w-4 h-4 text-success" />
@@ -173,6 +175,13 @@ export default function Customers() {
                       setEditingCustomer(customer);
                     }}>
                       <Edit className="w-4 h-4 text-muted-foreground" />
+                    </Button>
+                    <Button variant="outline" size="sm" className="p-2" onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedCustomerId(customer.id);
+                      setShowRxModal(true);
+                    }}>
+                      Add Prescription
                     </Button>
                   </div>
                 </div>
@@ -200,6 +209,13 @@ export default function Customers() {
         onOpenChange={setShowDetailsModal}
         customerId={selectedCustomerId}
         onEdit={handleEditCustomer}
+      />
+
+      <PrescriptionModal
+        open={showRxModal}
+        onOpenChange={setShowRxModal}
+        customerId={selectedCustomerId}
+        onSuccess={() => setShowRxModal(false)}
       />
     </div>
   );
