@@ -122,9 +122,11 @@ export default function Dashboard() {
         <Card className="shadow-card hover:shadow-hover transition-all">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-semibold">Recent Sales</CardTitle>
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" asChild>
+              <a href="/sales">
               <FileText className="w-4 h-4 mr-2" />
               View All
+              </a>
             </Button>
           </CardHeader>
           <CardContent>
@@ -176,8 +178,10 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground">{recall.phone}</p>
                     <p className="text-xs text-muted-foreground mt-1">Follow-up due today</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="p-2">
-                    <MessageCircle className="w-4 h-4 text-success" />
+                  <Button variant="ghost" size="sm" className="p-2" asChild>
+                    <a href={`https://wa.me/91${recall.phone}?text=${encodeURIComponent('Hello '+recall.name+', this is a reminder from Vision Point.')}`} target="_blank" rel="noreferrer">
+                      <MessageCircle className="w-4 h-4 text-success" />
+                    </a>
                   </Button>
                 </div>
               ))}
@@ -191,8 +195,10 @@ export default function Dashboard() {
                     <p className="text-sm text-muted-foreground">{birthday.phone}</p>
                     <p className="text-xs text-muted-foreground mt-1">Birthday today! Send wishes</p>
                   </div>
-                  <Button variant="ghost" size="sm" className="p-2">
-                    <MessageCircle className="w-4 h-4 text-success" />
+                  <Button variant="ghost" size="sm" className="p-2" asChild>
+                    <a href={`https://wa.me/91${birthday.phone}?text=${encodeURIComponent('Happy Birthday '+birthday.name+'! - Vision Point')}`} target="_blank" rel="noreferrer">
+                      <MessageCircle className="w-4 h-4 text-success" />
+                    </a>
                   </Button>
                 </div>
               ))}

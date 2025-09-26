@@ -25,9 +25,6 @@ export function Header() {
         <Button variant="ghost" size="sm">
           <MessageCircle className="w-4 h-4" />
         </Button>
-        <div className="w-8 h-8 bg-gradient-primary rounded-full flex items-center justify-center">
-          <span className="text-xs font-semibold text-primary-foreground">VP</span>
-        </div>
       </div>
     </header>
   );

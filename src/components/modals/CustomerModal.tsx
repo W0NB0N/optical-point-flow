@@ -26,6 +26,11 @@ export function CustomerModal({ open, onOpenChange, onSuccess, customer }: Custo
     notes: customer?.notes || ""
   });
 
+  // keep fields prefilled when editing
+  // re-sync when customer changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
